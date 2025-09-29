@@ -10,22 +10,27 @@ _start:
     mov rsi, num
     mov rdx, 16
     syscall
+    mov rcx, rax
+    xor rbx, rbx
+    xor rdx, rdx
 
-    mov rbx, 0
-    mov rcx, 0
-convert_loop:
-    mov al, [num+rcx]
+validate_loop:
+    cmp rdx, rcx
+    je done_convert
+    mov al, [num+rdx]
     cmp al, 10
     je done_convert
-    cmp al, 0
-    je done_convert
+    cmp al, '0'
+    jb invalid_input
+    cmp al, '9'
+    ja invalid_input
     sub al, '0'
     imul rbx, rbx, 10
     add rbx, rax
-    inc rcx
-    jmp convert_loop
-done_convert:
+    inc rdx
+    jmp validate_loop
 
+done_convert:
     test rbx, 1
     jz even
     mov rax, 60
@@ -35,4 +40,9 @@ done_convert:
 even:
     mov rax, 60
     xor rdi, rdi
+    syscall
+
+invalid_input:
+    mov rax, 60
+    mov rdi, 2
     syscall
