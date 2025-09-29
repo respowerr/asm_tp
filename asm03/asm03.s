@@ -1,41 +1,38 @@
 section .data
-    good db "42", 0
-    msg  db "1337", 0x0A
-    msglen equ $ - msg
+    out_msg db "1337", 10
+    out_len equ $ - out_msg
 
 section .text
-    global main
+    global _start
 
-main:
-    cmp rdi, 2
-    jne fail
+_start:
+    mov rbx, rsp
+    mov rax, [rbx]
+    cmp rax, 2
+    jne exit_fail
 
-    mov rbx, rsi
-    mov rbx, [rbx+8]
+    mov rsi, [rbx+16]
+    mov al, byte [rsi]
+    cmp al, '4'
+    jne exit_fail
+    mov al, byte [rsi+1]
+    cmp al, '2'
+    jne exit_fail
+    mov al, byte [rsi+2]
+    cmp al, 0
+    jne exit_fail
 
-    mov rsi, good
-
-compare_loop:
-    mov al, [rbx]
-    mov dl, [rsi]
-    cmp al, dl
-    jne fail
-    test al, al
-    je success
-    inc rbx
-    inc rsi
-    jmp compare_loop
-
-success:
     mov rax, 1
     mov rdi, 1
-    mov rsi, msg
-    mov rdx, msglen
+    mov rdx, out_len
+    mov rsi, out_msg
     syscall
 
-    xor eax, eax
-    ret
+    mov rax, 60
+    xor rdi, rdi
+    syscall
 
-fail:
-    mov eax, 1
-    ret
+exit_fail:
+    mov rax, 60
+    mov rdi, 1
+    syscall
