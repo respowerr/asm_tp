@@ -8,13 +8,13 @@ section .text
     global _start
 
 _start:
-    mov rax, [rsp]
+    mov rax, [rsp]          
     cmp rax, 4
     jne fail_exit           
 
     mov rsi, [rsp+16]       
     call str_to_int
-    mov rbx, rax
+    mov rbx, rax            
 
     mov rsi, [rsp+24]       
     call str_to_int
@@ -58,7 +58,13 @@ fail_exit:
 
 str_to_int:
     xor rax, rax
-.next_char:
+    xor rcx, rcx
+    mov dl, [rsi]
+    cmp dl, '-'
+    jne .parse
+    mov rcx, 1
+    inc rsi
+.parse:
     mov dl, [rsi]
     cmp dl, 0
     je .done
@@ -66,32 +72,47 @@ str_to_int:
     imul rax, rax, 10
     add rax, rdx
     inc rsi
-    jmp .next_char
+    jmp .parse
 .done:
+    test rcx, rcx
+    jz .ret
+    neg rax
+.ret:
     ret
 
 int_to_base:
     mov rcx, rdi
     mov r8, rdx
+    xor r10b, r10b
+    test rax, rax
+    jns .cont
+    neg rax
+    mov r10b, 1
+.cont:
     add rdi, 31
     mov byte [rdi], 0
     dec rdi
 .convert_loop:
     xor rdx, rdx
-    div r8 
-    mov r10b, dl
-    cmp r10b, 10
+    div r8
+    mov r9b, dl
+    cmp r9b, 10
     jb .digit
-    add r10b, 'A' - 10
+    add r9b, 'A' - 10
     jmp .store
 .digit:
-    add r10b, '0'
+    add r9b, '0'
 .store:
-    mov [rdi], r10b
+    mov [rdi], r9b
     dec rdi
     test rax, rax
     jnz .convert_loop
     inc rdi
+    cmp r10b, 0
+    je .no_sign
+    dec rdi
+    mov byte [rdi], '-'
+.no_sign:
     mov rsi, rdi
     mov rdi, rcx
     mov rcx, 32
