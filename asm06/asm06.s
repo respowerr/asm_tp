@@ -1,79 +1,112 @@
 section .bss
-    buf resb 32
+    output_buffer resb 20
+
+section .data
+    newline db 10
 
 section .text
     global _start
 
 _start:
-    mov rbx, rsp
-    mov rax, [rbx]
-    cmp rax, 2
-    jne exit_fail
+    cmp byte [rsp], 3
+    jne fail_exit
 
-    mov rsi, [rbx+16]
+    mov rsi, [rsp+16]
+    call str_to_int
+    mov r14, rax
 
-    xor rdi, rdi
-parse_first:
-    mov al, [rsi]
-    cmp al, 0
-    je exit_fail
-    cmp al, '-'
-    je parse_second_start
-    cmp al, '0'
-    jb exit_fail
-    cmp al, '9'
-    ja exit_fail
-    sub al, '0'
-    imul rdi, rdi, 10
-    add rdi, rax
-    inc rsi
-    jmp parse_first
+    mov rsi, [rsp+24]
+    call str_to_int
+    mov r15, rax
 
-parse_second_start:
-    inc rsi
-    xor rcx, rcx
-parse_second:
-    mov al, [rsi]
-    cmp al, 0
-    je compute_sum
-    cmp al, '0'
-    jb exit_fail
-    cmp al, '9'
-    ja exit_fail
-    sub al, '0'
-    imul rcx, rcx, 10
-    add rcx, rax
-    inc rsi
-    jmp parse_second
+    add r14, r15
 
-compute_sum:
-    add rdi, rcx
-    mov rax, rdi
-    mov rbx, 10
-    lea rsi, [buf+31]
-    mov byte [rsi], 0
+    mov rax, r14
+    mov rdi, output_buffer
+    call int_to_str
 
-itoa_loop:
-    xor rdx, rdx
-    div rbx
-    add dl, '0'
-    dec rsi
-    mov [rsi], dl
-    test rax, rax
-    jnz itoa_loop
+    mov rdx, rax
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, output_buffer
+    syscall
 
     mov rax, 1
     mov rdi, 1
-    mov rdx, buf+31
-    sub rdx, rsi
-    mov rsi, rsi
+    mov rsi, newline
+    mov rdx, 1
     syscall
 
+success_exit:
     mov rax, 60
     xor rdi, rdi
     syscall
 
-exit_fail:
+fail_exit:
     mov rax, 60
     mov rdi, 1
     syscall
+
+str_to_int:
+    xor rax, rax
+    xor rcx, rcx
+    mov rbx, 1
+
+    cmp byte [rsi], '-'
+    jne .parse_loop
+    mov rbx, -1
+    inc rsi
+
+.parse_loop:
+    mov cl, [rsi]
+    cmp cl, 0
+    je .finish
+    sub cl, '0'
+    imul rax, 10
+    add rax, rcx
+    inc rsi
+    jmp .parse_loop
+.finish:
+    imul rax, rbx
+    ret
+
+int_to_str:
+    mov r10, rdi
+    mov r11, 10
+    mov r12, 0
+
+    test rax, rax
+    jns .convert_loop
+    neg rax
+    mov r12, 1
+
+.convert_loop:
+    add rdi, 19
+    mov byte [rdi], 0
+    dec rdi
+.digit_loop:
+    xor rdx, rdx
+    div r11
+    add dl, '0'
+    mov [rdi], dl
+    dec rdi
+    test rax, rax
+    jnz .digit_loop
+
+    cmp r12, 1
+    jne .prepare_copy
+    mov byte [rdi], '-'
+    dec rdi
+
+.prepare_copy:
+    inc rdi
+    mov rdx, r10
+    add rdx, 20
+    sub rdx, rdi
+    mov rax, rdx
+
+    mov rcx, rax
+    mov rsi, rdi
+    mov rdi, r10
+    rep movsb
+    ret
