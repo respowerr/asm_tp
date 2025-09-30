@@ -17,6 +17,10 @@ _start:
     mov al, [rsi]
     cmp al, 10
     je .done_convert
+    cmp al, '0'
+    jb .invalid
+    cmp al, '9'
+    ja .invalid
     sub al, '0'
     imul rbx, rbx, 10
     add rbx, rax
@@ -33,7 +37,7 @@ _start:
     xor rdx, rdx
     div rcx
     cmp rdx, 0
-    je .divisible
+    je not_prime
 
     inc rcx
     mov rax, rcx
@@ -41,13 +45,16 @@ _start:
     cmp rax, rbx
     jbe .check_loop
 
-    ; --> alors nombre premier
     mov rax, 60
     xor rdi, rdi
     syscall
 
-.divisible:
 not_prime:
     mov rax, 60
     mov rdi, 1
+    syscall
+
+.invalid:
+    mov rax, 60
+    mov rdi, 2
     syscall
