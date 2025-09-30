@@ -16,23 +16,23 @@ _start:
 .convert:
     mov al, [rsi]
     cmp al, 10
-    je .done_convert
+    je done_convert
     cmp al, '0'
-    jb .invalid
+    jb invalid
     cmp al, '9'
-    ja .invalid
+    ja invalid
     sub al, '0'
     imul rbx, rbx, 10
     add rbx, rax
     inc rsi
     jmp .convert
-.done_convert:
 
+done_convert:
     cmp rbx, 2
     jb not_prime
 
     mov rcx, 2
-.check_loop:
+check_loop:
     mov rax, rbx
     xor rdx, rdx
     div rcx
@@ -43,7 +43,7 @@ _start:
     mov rax, rcx
     imul rax, rax
     cmp rax, rbx
-    jbe .check_loop
+    jbe check_loop
 
     mov rax, 60
     xor rdi, rdi
@@ -54,7 +54,7 @@ not_prime:
     mov rdi, 1
     syscall
 
-.invalid:
+invalid:
     mov rax, 60
     mov rdi, 2
     syscall
