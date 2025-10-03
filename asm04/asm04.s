@@ -37,6 +37,8 @@ not_first:
     movzx rax, al
     imul rbx, rbx, 10
     add rbx, rax
+    cmp rbx, 0x7FFFFFFF
+    jg invalid_input
     inc rdx
     jmp validate_loop
 
